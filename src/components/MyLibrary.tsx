@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Agent, getPurchases } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Download, Play } from "lucide-react";
@@ -6,11 +7,21 @@ import { toast } from "sonner";
 interface MyLibraryProps {
   agents: Agent[];
   onRunAI: (agent: Agent) => void;
+  searchQuery?: string;
 }
 
-const MyLibrary = ({ agents, onRunAI }: MyLibraryProps) => {
+const MyLibrary = ({ agents, onRunAI, searchQuery = "" }: MyLibraryProps) => {
   const purchases = getPurchases();
   const ownedAgents = agents.filter(a => purchases.some(p => p.agentId === a.id));
+
+  const filteredAgents = useMemo(() => {
+    const normalized = searchQuery.trim().toLowerCase();
+    if (!normalized) return ownedAgents;
+    return ownedAgents.filter(agent =>
+      agent.name.toLowerCase().includes(normalized) ||
+      agent.category.toLowerCase().includes(normalized)
+    );
+  }, [ownedAgents, searchQuery]);
 
   const handleDownload = (agent: Agent) => {
     const bundle = JSON.stringify(agent, null, 2);
@@ -34,25 +45,30 @@ const MyLibrary = ({ agents, onRunAI }: MyLibraryProps) => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h2 className="text-xl font-semibold text-foreground mb-6">My Library</h2>
-      <div className="space-y-2">
-        {ownedAgents.map(agent => (
-          <div key={agent.id} className="glass rounded-lg px-5 py-4 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">{agent.category}</span>
-              <h3 className="text-foreground font-medium">{agent.name}</h3>
+      <h2 className="text-xl font-semibold text-foreground mb-4">My Library</h2>
+
+      {filteredAgents.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">No agents match your search query.</div>
+      ) : (
+        <div className="space-y-2">
+          {filteredAgents.map(agent => (
+            <div key={agent.id} className="glass rounded-lg px-5 py-4 flex items-center justify-between">
+              <div>
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground">{agent.category}</span>
+                <h3 className="text-foreground font-medium">{agent.name}</h3>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="glass" size="sm" onClick={() => handleDownload(agent)}>
+                  <Download className="w-3.5 h-3.5 mr-1" /> Bundle
+                </Button>
+                <Button variant="neon" size="sm" onClick={() => onRunAI(agent)}>
+                  <Play className="w-3.5 h-3.5 mr-1" /> Run AI
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button variant="glass" size="sm" onClick={() => handleDownload(agent)}>
-                <Download className="w-3.5 h-3.5 mr-1" /> Bundle
-              </Button>
-              <Button variant="neon" size="sm" onClick={() => onRunAI(agent)}>
-                <Play className="w-3.5 h-3.5 mr-1" /> Run AI
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -11,6 +11,7 @@ const Index = () => {
   const [authed, setAuthed] = useState(isAuthenticated());
   const [tab, setTab] = useState("marketplace");
   const [agents, setAgents] = useState<Agent[]>(getAgents());
+  const [searchQuery, setSearchQuery] = useState("");
   const [chatAgent, setChatAgent] = useState<Agent | null>(null);
   const [, setTick] = useState(0);
 
@@ -30,13 +31,30 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar activeTab={tab} onTabChange={setTab} onLogout={handleLogout} />
+      <Navbar
+        activeTab={tab}
+        onTabChange={setTab}
+        onLogout={handleLogout}
+        searchQuery={searchQuery}
+        onSearch={setSearchQuery}
+      />
       <div className="animate-in fade-in duration-200">
         {tab === "marketplace" && (
-          <Marketplace agents={agents} onRefresh={refresh} onPreview={a => setChatAgent(a)} />
+          <Marketplace
+            agents={agents}
+            onRefresh={refresh}
+            onPreview={a => setChatAgent(a)}
+            searchQuery={searchQuery}
+          />
         )}
         {tab === "forge" && <DeveloperForge onPublish={refresh} />}
-        {tab === "library" && <MyLibrary agents={agents} onRunAI={a => setChatAgent(a)} />}
+        {tab === "library" && (
+          <MyLibrary
+            agents={agents}
+            onRunAI={a => setChatAgent(a)}
+            searchQuery={searchQuery}
+          />
+        )}
       </div>
       {chatAgent && <AIChatModal agent={chatAgent} onClose={() => setChatAgent(null)} />}
     </div>
