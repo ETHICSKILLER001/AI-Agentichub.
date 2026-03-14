@@ -1,17 +1,18 @@
+import { useEffect, useState } from "react";
 import { Agent, getAuthToken } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Play } from "lucide-react";
 import { toast } from "sonner";
 
-interface MarketplaceProps {
-  agents: Agent[];
+interface MarketplaceProps {  agents: Agent[];
   onRefresh: () => void;
   onPreview: (agent: Agent) => void;
   searchQuery?: string;
 }
 
 const Marketplace = ({ agents, onRefresh, onPreview, searchQuery = "" }: MarketplaceProps) => {
-  const purchases = getPurchases();
+  const [purchases, setPurchases] = useState<{ agentId: string }[]>([]);
+
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const visibleAgents = normalizedQuery
     ? agents.filter(agent =>
@@ -22,13 +23,50 @@ const Marketplace = ({ agents, onRefresh, onPreview, searchQuery = "" }: Marketp
       )
     : agents;
 
-  const handleBuy = (agent: Agent) => {
-    addPurchase(agent.id);
-    onRefresh();
-    toast.success(`Licensed "${agent.name}" successfully!`);
+  const fetchPurchases = () => {
+    const token = getAuthToken();
+    if (!token) return;
+
+    fetch("/api/purchases", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => setPurchases(data.purchases || []))
+      .catch(() => setPurchases([]));
   };
 
-  const owned = (id: string) => purchases.some(p => p.agentId === id);
+  useEffect(() => {
+    fetchPurchases();
+  }, []);
+
+  const handleBuy = async (agent: Agent) => {
+    const token = getAuthToken();
+    if (!token) {
+      toast.error("Login required");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/purchase/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ agentId: agent.id }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        toast.error(data.error || "Purchase failed");
+        return;
+      }
+
+      fetchPurchases();
+      onRefresh();
+      toast.success(`Licensed "${agent.name}" successfully!`);
+    } catch (err) {
+      toast.error("Purchase failed");
+    }
+  };
+
+  const owned = (id: string) => purchases.some((p) => p.agentId === id);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">

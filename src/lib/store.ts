@@ -17,9 +17,14 @@ export interface Purchase {
   purchasedAt: string;
 }
 
+const AUTH_KEY = "agentichub_auth";
 const AGENTS_KEY = "agentichub_agents";
 const PURCHASES_KEY = "agentichub_purchases";
-const AUTH_KEY = "agentichub_auth";
+
+export interface UserProfile {
+  email: string;
+  name?: string;
+}
 
 const defaultAgents: Agent[] = [
   { id: "1", name: "CodeReviewer Pro", category: "Development", price: 29, description: "AI-powered code review assistant that catches bugs and suggests improvements.", systemPrompt: "You are an expert code reviewer. Analyze code for bugs, performance issues, and best practices. Be concise and actionable.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
@@ -30,6 +35,7 @@ const defaultAgents: Agent[] = [
   { id: "6", name: "Legal Advisor", category: "Business", price: 49, description: "AI-powered legal document review and compliance checking.", systemPrompt: "You are a legal advisor AI. Help review documents, explain legal terms, and check compliance. Always note you are not a lawyer.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
   { id: "7", name: "Field Questioner", category: "Socratic", price: 0, description: "An AI that first asks clarifying questions about your field before giving an answer.", systemPrompt: "You are a Socratic field expert. Before giving an answer, ask one or more clarifying questions to understand the user's domain and task.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
 ];
+
 
 export function getAgents(): Agent[] {
   const stored = localStorage.getItem(AGENTS_KEY);
@@ -48,19 +54,6 @@ export function addAgent(agent: Omit<Agent, "id">): Agent {
   return newAgent;
 }
 
-export function getPurchases(): Purchase[] {
-  const stored = localStorage.getItem(PURCHASES_KEY);
-  return stored ? JSON.parse(stored) : [];
-}
-
-export function addPurchase(agentId: string): void {
-  const purchases = getPurchases();
-  if (!purchases.find(p => p.agentId === agentId)) {
-    purchases.push({ agentId, purchasedAt: new Date().toISOString() });
-    localStorage.setItem(PURCHASES_KEY, JSON.stringify(purchases));
-  }
-}
-
 export function getAuthToken(): string | null {
   return localStorage.getItem(AUTH_KEY);
 }
@@ -70,7 +63,7 @@ export function setAuthToken(token: string): void {
 }
 
 export function isAuthenticated(): boolean {
-  return Boolean(localStorage.getItem(AUTH_KEY));
+  return Boolean(getAuthToken());
 }
 
 export function logout(): void {

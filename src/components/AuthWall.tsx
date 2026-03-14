@@ -18,21 +18,30 @@ const AuthWall = ({ onLogin }: AuthWallProps) => {
     e.preventDefault();
     setError("");
 
-    const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      setError(data.error || "Authentication failed");
+    if (!email || !password) {
+      setError("Email and password are required");
       return;
     }
 
-    setAuthToken(data.token);
-    onLogin();
+    const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        setError(data.error || "Authentication failed");
+        return;
+      }
+
+      setAuthToken(data.token);
+      onLogin();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Authentication failed");
+    }
   };
 
   return (

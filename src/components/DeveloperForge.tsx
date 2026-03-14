@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { addAgent } from "@/lib/store";
+import { getAuthToken } from "@/lib/store";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -12,16 +12,39 @@ interface DeveloperForgeProps {
 const DeveloperForge = ({ onPublish }: DeveloperForgeProps) => {
   const [form, setForm] = useState({ name: "", price: "", category: "", description: "", systemPrompt: "", provider: "openai", model: "gpt-4o-mini" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.price || !form.category || !form.description || !form.systemPrompt || !form.provider || !form.model) {
       toast.error("All fields are required");
       return;
     }
-    addAgent({ ...form, price: parseFloat(form.price), author: "admin" });
-    setForm({ name: "", price: "", category: "", description: "", systemPrompt: "" });
-    onPublish();
-    toast.success("Agent published!");
+
+    const token = getAuthToken();
+    if (!token) {
+      toast.error("Login required");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/agents", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...form, price: parseFloat(form.price), author: "admin" }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        toast.error(data.error || "Publish failed");
+        return;
+      }
+      setForm({ name: "", price: "", category: "", description: "", systemPrompt: "", provider: "openai", model: "gpt-4o-mini" });
+      onPublish();
+      toast.success("Agent published!");
+    } catch {
+      toast.error("Publish failed");
+    }
   };
 
   const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>

@@ -5,32 +5,52 @@ import Marketplace from "@/components/Marketplace";
 import DeveloperForge from "@/components/DeveloperForge";
 import MyLibrary from "@/components/MyLibrary";
 import AIChatModal from "@/components/AIChatModal";
-import { isAuthenticated, logout, getAgents, getAuthToken, setAuthToken, Agent } from "@/lib/store";
+import { isAuthenticated, logout, getAuthToken, Agent } from "@/lib/store";
 
 const Index = () => {
   const [authed, setAuthed] = useState(isAuthenticated());
   const [user, setUser] = useState<{ email: string; name?: string } | null>(null);
   const [tab, setTab] = useState("marketplace");
-  const [agents, setAgents] = useState<Agent[]>(getAgents());
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [chatAgent, setChatAgent] = useState<Agent | null>(null);
   const [, setTick] = useState(0);
 
+  const refresh = useCallback(() => {
+    fetch("/api/agents")
+      .then((r) => r.json())
+      .then((data) => setAgents(data.agents || []))
+      .catch(() => setAgents([]));
+    setTick((t) => t + 1);
+  }, []);
+
   useEffect(() => {
     const token = getAuthToken();
-    if (!token) return;
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
     fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(data => {
-        if (data.user) setUser(data.user);
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.user) {
+          setUser(data.user);
+          setAuthed(true);
+        } else {
+          setUser(null);
+          setAuthed(false);
+        }
       })
-      .catch(() => setUser(null));
+      .catch(() => {
+        setUser(null);
+        setAuthed(false);
+      });
   }, [authed]);
 
-  const refresh = useCallback(() => {
-    setAgents(getAgents());
-    setTick(t => t + 1);
-  }, []);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const handleLogout = () => {
     logout();
@@ -41,11 +61,17 @@ const Index = () => {
   const onLoginSuccess = () => {
     setAuthed(true);
     const token = getAuthToken();
-    if (!token) return;
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
     fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.json())
-      .then(data => { if (data.user) setUser(data.user); })
+      .then((r) => r.json())
+      .then((data) => { if (data.user) setUser(data.user); })
       .catch(() => setUser(null));
+
+    refresh();
   };
 
   if (!authed) {

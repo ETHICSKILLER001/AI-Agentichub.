@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Agent, getPurchases } from "@/lib/store";
+import { useMemo, useEffect, useState } from "react";
+import { Agent, getAuthToken } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Download, Play } from "lucide-react";
 import { toast } from "sonner";
@@ -11,8 +11,18 @@ interface MyLibraryProps {
 }
 
 const MyLibrary = ({ agents, onRunAI, searchQuery = "" }: MyLibraryProps) => {
-  const purchases = getPurchases();
-  const ownedAgents = agents.filter(a => purchases.some(p => p.agentId === a.id));
+  const [purchases, setPurchases] = useState<{ agentId: string }[]>([]);
+
+  useEffect(() => {
+    const token = getAuthToken();
+    if (!token) return;
+    fetch("/api/purchases", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((data) => setPurchases(data.purchases || []))
+      .catch(() => setPurchases([]));
+  }, []);
+
+  const ownedAgents = agents.filter((a) => purchases.some((p) => p.agentId === a.id));
 
   const filteredAgents = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
