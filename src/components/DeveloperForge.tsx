@@ -10,11 +10,11 @@ interface DeveloperForgeProps {
 }
 
 const DeveloperForge = ({ onPublish }: DeveloperForgeProps) => {
-  const [form, setForm] = useState({ name: "", price: "", category: "", description: "", systemPrompt: "" });
+  const [form, setForm] = useState({ name: "", price: "", category: "", description: "", systemPrompt: "", provider: "openai", model: "gpt-4o-mini" });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.price || !form.category || !form.description || !form.systemPrompt) {
+    if (!form.name || !form.price || !form.category || !form.description || !form.systemPrompt || !form.provider || !form.model) {
       toast.error("All fields are required");
       return;
     }
@@ -38,6 +38,20 @@ const DeveloperForge = ({ onPublish }: DeveloperForgeProps) => {
         </div>
         <Textarea placeholder="Description" value={form.description} onChange={set("description")} className="bg-muted/50 border-border/50 min-h-[80px]" />
         <Textarea placeholder="System Prompt" value={form.systemPrompt} onChange={set("systemPrompt")} className="bg-muted/50 border-border/50 min-h-[100px]" />
+        <div className="grid grid-cols-2 gap-4">
+          <label className="block text-xs font-medium text-muted-foreground">
+            Provider
+            <select
+              value={form.provider}
+              onChange={e => setForm(f => ({ ...f, provider: e.target.value }))}
+              className="w-full mt-1 bg-muted/50 border border-border/50 rounded px-2 py-1"
+            >
+              <option value="openai">OpenAI</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </label>
+          <Input placeholder="Model (e.g. gpt-4o-mini)" value={form.model} onChange={set("model")} className="bg-muted/50 border-border/50" />
+        </div>
         <Button type="submit" variant="indigo" className="w-full">Publish Agent</Button>
       </form>
     </div>

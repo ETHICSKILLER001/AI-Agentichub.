@@ -14,8 +14,7 @@ interface Message {
   parts: { text: string }[];
 }
 
-const GEMINI_KEY = "AIzaSyBxVWxBBfGeI0ICmorNut2ZUNTl6H79sqw";
-
+// Client now calls backend proxy; keys stay server-side.
 const AIChatModal = ({ agent, onClose }: AIChatModalProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -34,20 +33,36 @@ const AIChatModal = ({ agent, onClose }: AIChatModalProps) => {
     setInput("");
     setLoading(true);
 
+    const systemPromptWithFollowUp =
+      (agent.systemPrompt?.trim() || "") +
+      "\n\nYou are an AI assistant that always asks at least one clarifying question about the user's field of interest before giving a final answer.";
+
     try {
-      const body = {
-        system_instruction: { parts: [{ text: agent.systemPrompt }] },
-        contents: history,
-      };
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
-      );
-      const data = await res.json();
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response received.";
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: agent.id,
+          provider: agent.provider || "openai",
+          model: agent.model || (agent.provider === "gemini" ? "gemini-2.0-flash" : "gpt-4o-mini"),
+          systemPrompt: systemPromptWithFollowUp,
+          history,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `AI proxy request failed with status ${res.status}`);
+      }
+
+      const text = data.text || "No response received from the AI service.";
       setMessages(prev => [...prev, { role: "model", parts: [{ text }] }]);
-    } catch {
-      setMessages(prev => [...prev, { role: "model", parts: [{ text: "Error connecting to AI." }] }]);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? `Unable to contact AI backend: ${error.message}.\nAs a temporary fallback, please tell me more about your field/topic and I will ask a clarifying question.`
+          : "Error connecting to agent proxy. Please check server and API keys.";
+      setMessages(prev => [...prev, { role: "model", parts: [{ text: message }] }]);
     } finally {
       setLoading(false);
     }

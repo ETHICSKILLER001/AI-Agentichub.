@@ -44,6 +44,34 @@ npm run dev
 - `npm run test` - Run tests
 - `npm run lint` - Run ESLint
 
+## AI API Keys
+
+Create an `.env` file in the project root and add your keys:
+
+```env
+OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+```
+
+Do not commit `.env` to source control.
+
+## Run with backend proxy
+
+1. Start the proxy:
+   ```sh
+   npm run dev:api
+   ```
+2. Start the frontend (new terminal):
+   ```sh
+   npm run dev
+   ```
+3. Or run both together:
+   ```sh
+   npm run dev:all
+   ```
+
+`AIChatModal` now uses `/api/chat` with server-side key handling.
+
 ## Deployment
 
 Build the project and deploy the `dist` folder to your hosting provider.

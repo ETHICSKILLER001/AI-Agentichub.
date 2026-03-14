@@ -1,4 +1,4 @@
-import { Agent, getPurchases, addPurchase } from "@/lib/store";
+import { Agent, getAuthToken } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Play } from "lucide-react";
 import { toast } from "sonner";

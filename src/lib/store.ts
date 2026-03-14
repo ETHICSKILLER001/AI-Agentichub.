@@ -1,3 +1,5 @@
+export type AgentProvider = "gemini" | "openai";
+
 export interface Agent {
   id: string;
   name: string;
@@ -6,6 +8,8 @@ export interface Agent {
   description: string;
   systemPrompt: string;
   author: string;
+  provider?: AgentProvider;
+  model?: string;
 }
 
 export interface Purchase {
@@ -18,12 +22,13 @@ const PURCHASES_KEY = "agentichub_purchases";
 const AUTH_KEY = "agentichub_auth";
 
 const defaultAgents: Agent[] = [
-  { id: "1", name: "CodeReviewer Pro", category: "Development", price: 29, description: "AI-powered code review assistant that catches bugs and suggests improvements.", systemPrompt: "You are an expert code reviewer. Analyze code for bugs, performance issues, and best practices. Be concise and actionable.", author: "AgenticHub" },
-  { id: "2", name: "SEO Strategist", category: "Marketing", price: 19, description: "Optimize your content for search engines with AI-driven insights.", systemPrompt: "You are an SEO expert. Provide actionable SEO recommendations for content, keywords, and technical optimization.", author: "AgenticHub" },
-  { id: "3", name: "Data Analyst", category: "Analytics", price: 39, description: "Transform raw data into actionable insights with natural language queries.", systemPrompt: "You are a data analyst. Help users interpret data, create queries, and derive insights from datasets.", author: "AgenticHub" },
-  { id: "4", name: "UX Copywriter", category: "Design", price: 15, description: "Generate compelling microcopy for buttons, tooltips, and empty states.", systemPrompt: "You are a UX copywriter. Write clear, concise, and engaging microcopy for user interfaces.", author: "AgenticHub" },
-  { id: "5", name: "DevOps Assistant", category: "Development", price: 35, description: "Automate CI/CD pipelines and infrastructure management.", systemPrompt: "You are a DevOps engineer. Help with CI/CD, Docker, Kubernetes, and cloud infrastructure.", author: "AgenticHub" },
-  { id: "6", name: "Legal Advisor", category: "Business", price: 49, description: "AI-powered legal document review and compliance checking.", systemPrompt: "You are a legal advisor AI. Help review documents, explain legal terms, and check compliance. Always note you are not a lawyer.", author: "AgenticHub" },
+  { id: "1", name: "CodeReviewer Pro", category: "Development", price: 29, description: "AI-powered code review assistant that catches bugs and suggests improvements.", systemPrompt: "You are an expert code reviewer. Analyze code for bugs, performance issues, and best practices. Be concise and actionable.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
+  { id: "2", name: "SEO Strategist", category: "Marketing", price: 19, description: "Optimize your content for search engines with AI-driven insights.", systemPrompt: "You are an SEO expert. Provide actionable SEO recommendations for content, keywords, and technical optimization.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
+  { id: "3", name: "Data Analyst", category: "Analytics", price: 39, description: "Transform raw data into actionable insights with natural language queries.", systemPrompt: "You are a data analyst. Help users interpret data, create queries, and derive insights from datasets.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
+  { id: "4", name: "UX Copywriter", category: "Design", price: 15, description: "Generate compelling microcopy for buttons, tooltips, and empty states.", systemPrompt: "You are a UX copywriter. Write clear, concise, and engaging microcopy for user interfaces.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
+  { id: "5", name: "DevOps Assistant", category: "Development", price: 35, description: "Automate CI/CD pipelines and infrastructure management.", systemPrompt: "You are a DevOps engineer. Help with CI/CD, Docker, Kubernetes, and cloud infrastructure.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
+  { id: "6", name: "Legal Advisor", category: "Business", price: 49, description: "AI-powered legal document review and compliance checking.", systemPrompt: "You are a legal advisor AI. Help review documents, explain legal terms, and check compliance. Always note you are not a lawyer.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
+  { id: "7", name: "Field Questioner", category: "Socratic", price: 0, description: "An AI that first asks clarifying questions about your field before giving an answer.", systemPrompt: "You are a Socratic field expert. Before giving an answer, ask one or more clarifying questions to understand the user's domain and task.", author: "AgenticHub", provider: "openai", model: "gpt-4o-mini" },
 ];
 
 export function getAgents(): Agent[] {
@@ -56,16 +61,16 @@ export function addPurchase(agentId: string): void {
   }
 }
 
-export function isAuthenticated(): boolean {
-  return localStorage.getItem(AUTH_KEY) === "true";
+export function getAuthToken(): string | null {
+  return localStorage.getItem(AUTH_KEY);
 }
 
-export function login(id: string, pass: string): boolean {
-  if (id === "admin" && pass === "1234") {
-    localStorage.setItem(AUTH_KEY, "true");
-    return true;
-  }
-  return false;
+export function setAuthToken(token: string): void {
+  localStorage.setItem(AUTH_KEY, token);
+}
+
+export function isAuthenticated(): boolean {
+  return Boolean(localStorage.getItem(AUTH_KEY));
 }
 
 export function logout(): void {

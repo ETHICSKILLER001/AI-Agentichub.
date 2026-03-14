@@ -1,24 +1,38 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { login } from "@/lib/store";
+import { setAuthToken } from "@/lib/store";
 
 interface AuthWallProps {
   onLogin: () => void;
 }
 
 const AuthWall = ({ onLogin }: AuthWallProps) => {
-  const [id, setId] = useState("");
-  const [pass, setPass] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(id, pass)) {
-      onLogin();
-    } else {
-      setError("Invalid credentials");
+    setError("");
+
+    const endpoint = isRegister ? "/api/auth/register" : "/api/auth/login";
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, name }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      setError(data.error || "Authentication failed");
+      return;
     }
+
+    setAuthToken(data.token);
+    onLogin();
   };
 
   return (
@@ -41,21 +55,38 @@ const AuthWall = ({ onLogin }: AuthWallProps) => {
           <p className="text-sm text-muted-foreground mt-1">Sign in to continue</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isRegister && (
+            <Input
+              placeholder="Name"
+              value={name}
+              onChange={e => { setName(e.target.value); setError(""); }}
+              className="bg-muted/50 border-border/50 focus:border-primary"
+            />
+          )}
           <Input
-            placeholder="Username"
-            value={id}
-            onChange={e => { setId(e.target.value); setError(""); }}
+            placeholder="Email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setError(""); }}
             className="bg-muted/50 border-border/50 focus:border-primary"
           />
           <Input
             type="password"
             placeholder="Password"
-            value={pass}
-            onChange={e => { setPass(e.target.value); setError(""); }}
+            value={password}
+            onChange={e => { setPassword(e.target.value); setError(""); }}
             className="bg-muted/50 border-border/50 focus:border-primary"
           />
           {error && <p className="text-destructive text-sm">{error}</p>}
-          <Button type="submit" variant="indigo" className="w-full">Sign In</Button>
+          <Button type="submit" variant="indigo" className="w-full">
+            {isRegister ? "Register" : "Sign In"}
+          </Button>
+          <button
+            type="button"
+            onClick={() => setIsRegister(v => !v)}
+            className="text-xs text-muted-foreground underline"
+          >
+            {isRegister ? "Have an account? Sign in" : "Need an account? Register"}
+          </button>
         </form>
       </div>
     </div>
